@@ -1,0 +1,106 @@
+"""
+Llama3 Fine-Tuning Setup
+========================
+Erstellt ein custom Ollama-Modell für Email-Generierung.
+
+Für Anfänger: Dieses Script erstellt ein spezialisiertes
+AI-Modell das Emails im Stil von Prof. Schmidt generiert.
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+print("="*60)
+print("🎓 LLAMA3 FINE-TUNING FÜR PHISHING-PROJEKT")
+print("="*60)
+
+# Check ob Ollama läuft
+print("\n1️⃣ Checke Ollama...")
+
+# Ollama Pfad (Windows Standard-Installation)
+ollama_path = r"C:\Users\vinay\AppData\Local\Programs\Ollama\ollama.exe"
+
+try:
+    result = subprocess.run([ollama_path, 'list'], capture_output=True, text=True)
+    if result.returncode == 0:
+        print("   ✅ Ollama läuft!")
+        print(f"   📍 Pfad: {ollama_path}")
+    else:
+        print("   ❌ Ollama läuft nicht!")
+        print("   Starte Ollama und versuche erneut.")
+        sys.exit(1)
+except FileNotFoundError:
+    print("   ❌ Ollama nicht gefunden!")
+    print(f"   Erwarteter Pfad: {ollama_path}")
+    print("   Installiere Ollama: https://ollama.ai")
+    sys.exit(1)
+
+# Erstelle Custom Model
+print("\n2️⃣ Erstelle Custom Model 'professor-emails'...")
+print("   ⏱️ Dies dauert ca. 2-3 Minuten...")
+
+try:
+    # Gehe zum richtigen Ordner
+    project_dir = Path(__file__).parent
+    
+    # Erstelle Model mit Modelfile
+    result = subprocess.run(
+        [ollama_path, 'create', 'professor-emails', '-f', 'Modelfile-professor'],
+        cwd=project_dir,
+        capture_output=True,
+        text=True
+    )
+    
+    if result.returncode == 0:
+        print("   ✅ Model 'professor-emails' erstellt!")
+    else:
+        print(f"   ❌ Fehler: {result.stderr}")
+        sys.exit(1)
+        
+except Exception as e:
+    print(f"   ❌ Exception: {e}")
+    sys.exit(1)
+
+# Test das Model
+print("\n3️⃣ Teste das neue Model...")
+
+test_prompt = """Erstelle eine kurze Test-Email für Security Awareness Training:
+
+Empfänger: Max Müller, Student
+Thema: Erinnerung an Projektabgabe
+Stil: Wie Prof. Dr. Schmidt
+"""
+
+try:
+    result = subprocess.run(
+        [ollama_path, 'run', 'professor-emails', test_prompt],
+        capture_output=True,
+        text=True,
+        timeout=60
+    )
+    
+    if result.returncode == 0:
+        print("   ✅ Test erfolgreich!")
+        print("\n📧 Generierte Test-Email:")
+        print("-" * 60)
+        print(result.stdout[:300] + "...")
+        print("-" * 60)
+    else:
+        print(f"   ⚠️ Warnung: {result.stderr}")
+        
+except subprocess.TimeoutExpired:
+    print("   ⏱️ Timeout - Model braucht zu lange")
+except Exception as e:
+    print(f"   ❌ Exception: {e}")
+
+# Fertig!
+print("\n" + "="*60)
+print("✅ SETUP ABGESCHLOSSEN!")
+print("="*60)
+print("\nDu kannst jetzt:")
+print("1. Modell testen: ollama run professor-emails")
+print("2. Im Code nutzen: model='professor-emails'")
+print("3. Phishing-Emails generieren!")
+print("\n🎉 Bereit für deine Gruppe-Demo!")
+

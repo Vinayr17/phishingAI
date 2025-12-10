@@ -36,22 +36,40 @@ def init_db() -> None:
 
 
 def parse_user_agent(ua: str) -> Tuple[str, str, str]:
-    """Einfache Heuristik für Browser, OS und Gerätetyp."""
+    """Verbesserte Heuristik für Browser, OS und Gerätetyp.
+    
+    WICHTIG: Prüfe spezifischere Browser ZUERST, da viele auf Chromium basieren
+    und "chrome" im User-Agent enthalten.
+    """
     ua_lower = ua.lower()
 
     # Browser (inkl. Mobile Apps)
+    # WICHTIG: Reihenfolge ist wichtig! Spezifischere Browser zuerst prüfen.
+    
+    # Mobile Apps zuerst
     if "studo" in ua_lower or "studip" in ua_lower:
         browser = "Studo App"
-    elif "chrome" in ua_lower and "edg" not in ua_lower:
-        browser = "Chrome"
-    elif "edg" in ua_lower:
+    # Edge (enthält "chrome" im UA, muss VOR Chrome geprüft werden)
+    elif "edg/" in ua_lower or ("edg" in ua_lower and "edge" not in ua_lower):
         browser = "Edge"
+    # Opera (enthält "chrome" im UA, muss VOR Chrome geprüft werden)
+    elif "opr/" in ua_lower or "opera" in ua_lower:
+        browser = "Opera"
+    # Brave (enthält "chrome" im UA)
+    elif "brave" in ua_lower:
+        browser = "Brave"
+    # Vivaldi (enthält "chrome" im UA)
+    elif "vivaldi" in ua_lower:
+        browser = "Vivaldi"
+    # Chrome (zuletzt, da viele andere Browser "chrome" enthalten)
+    elif "chrome" in ua_lower and "edg" not in ua_lower and "opr" not in ua_lower:
+        browser = "Chrome"
+    # Firefox
     elif "firefox" in ua_lower:
         browser = "Firefox"
+    # Safari (enthält KEIN "chrome" im UA)
     elif "safari" in ua_lower and "chrome" not in ua_lower:
         browser = "Safari"
-    elif "opera" in ua_lower or "opr" in ua_lower:
-        browser = "Opera"
     else:
         browser = "Unknown"
 

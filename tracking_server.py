@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 from flask import Flask, Response, request
+from pytz import timezone
 
 # Datenbank-Pfad (lokal im Projektordner)
 DB_PATH = Path(__file__).parent / "tracking.db"
@@ -153,8 +154,9 @@ def track() -> Response:
     # Automatisch erfasste Daten (aus User-Agent)
     ua = request.headers.get("User-Agent", "")
     browser, os, device = parse_user_agent(ua)
-    # Lokale Zeit statt UTC verwenden
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Lokale Zeit (Deutschland) statt UTC verwenden
+    berlin_tz = timezone('Europe/Berlin')
+    timestamp = datetime.now(berlin_tz).strftime("%Y-%m-%d %H:%M:%S")
     
     # Debug-Logging (in Konsole)
     print(f"\n[TRACKING] Klick erfasst:")

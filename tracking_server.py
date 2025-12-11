@@ -50,24 +50,30 @@ def parse_user_agent(ua: str) -> Tuple[str, str, str]:
     # Mobile Apps zuerst
     if "studo" in ua_lower or "studip" in ua_lower:
         browser = "Studo App"
+    # Samsung Internet (muss VOR Chrome geprüft werden, da Chromium-basiert)
+    elif "samsungbrowser" in ua_lower or "samsung internet" in ua_lower:
+        browser = "Samsung Internet"
+    # DuckDuckGo Browser (muss VOR Chrome geprüft werden, da Chromium-basiert)
+    elif "duckduckgo" in ua_lower:
+        browser = "DuckDuckGo"
     # Edge (enthält "chrome" im UA, muss VOR Chrome geprüft werden)
     elif "edg/" in ua_lower or ("edg" in ua_lower and "edge" not in ua_lower):
         browser = "Edge"
     # Opera (enthält "chrome" im UA, muss VOR Chrome geprüft werden)
     elif "opr/" in ua_lower or "opera" in ua_lower:
         browser = "Opera"
-    # Brave (enthält "chrome" im UA)
+    # Brave Private VPN Webbrowser (enthält "chrome" im UA)
     elif "brave" in ua_lower:
-        browser = "Brave"
+        browser = "Brave Private VPN Webbrowser"
     # Vivaldi (enthält "chrome" im UA)
     elif "vivaldi" in ua_lower:
         browser = "Vivaldi"
-    # Chrome (zuletzt, da viele andere Browser "chrome" enthalten)
+    # Google Chrome (zuletzt, da viele andere Browser "chrome" enthalten)
     elif "chrome" in ua_lower and "edg" not in ua_lower and "opr" not in ua_lower:
-        browser = "Chrome"
-    # Firefox
+        browser = "Google Chrome"
+    # Mozilla Firefox
     elif "firefox" in ua_lower:
-        browser = "Firefox"
+        browser = "Mozilla Firefox"
     # Safari (enthält KEIN "chrome" im UA)
     elif "safari" in ua_lower and "chrome" not in ua_lower:
         browser = "Safari"

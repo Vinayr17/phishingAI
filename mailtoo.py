@@ -541,7 +541,13 @@ def action_generate() -> None:
                         separator = "&" if "?" in url else "?"
                         url_updated = f"{url}{separator}email={recipient}"
                     return f'href="{url_updated}"'
-                return re.sub(r'href="([^"]*track[^"]*)"', replace_email, html_content)
+                # Wenn ein Shortlink (Bitly) genutzt wird, arbeite mit der TRACKING_URL als Anker.
+                # Fallback: alles was "track" enthält.
+                if TRACKING_URL:
+                    pattern = rf'href="({re.escape(TRACKING_URL)}[^"]*)"'
+                else:
+                    pattern = r'href="([^"]*track[^"]*)"'
+                return re.sub(pattern, replace_email, html_content)
             sender_name = params.get("sender_name", "Prof. Dr. Anne Lauscher")
             # Formatiere Name für IONOS-Anzeige: "Lauscher, Prof. Dr. Anne" statt "Prof. Dr. Anne Lauscher"
             # Extrahiere Nachname und Vorname

@@ -24,6 +24,12 @@ from generate_phishing import (
     combine_with_template,
 )
 
+# Tracking-Konfiguration (URL & Link-Text)
+try:
+    from config import TRACKING_URL, TRACKING_DISPLAY_TEXT
+except Exception:
+    TRACKING_URL = None
+    TRACKING_DISPLAY_TEXT = "moodle.uni-hamburg.de/dokument"
 
 ROOT = Path(__file__).parent
 TEMPLATES = {
@@ -362,7 +368,7 @@ def action_generate() -> None:
             params["manual_body"] = None
     else:
         params = {
-            "name": ask("Empfänger Name", "Max Müller"),
+            "name": ask("Empfänger Name (optional - wird sonst aus Email extrahiert)", ""),  # Optional
             "role": ask("Rolle", "Student"),
             "topic": ask("Thema", "Rückfrage zu eingereichten Unterlagen"),
             "scenario": ask("Szenario [question|deadline|urgent_request|reminder|update]", "question"),
@@ -375,6 +381,10 @@ def action_generate() -> None:
             "city": ask("Stadt/PLZ", "20146 Hamburg"),
             "email": ask("Email-Adresse", "m.schmidt@techuniversity.edu"),
         }
+        
+        # Wenn Name leer ist, setze auf None (wird später aus Email extrahiert)
+        if not params["name"] or params["name"].strip() == "":
+            params["name"] = None
 
         # Standardwerte setzen, falls nicht erkannt
         params.setdefault("faculty", "University of Hamburg Business School")
@@ -459,6 +469,13 @@ def action_generate() -> None:
         "website": params.get("website"),
     }
 
+    # Tracking-Parameter für den Platzhalter [Link] im Text
+    # WICHTIG: Name wird NICHT im Link gespeichert - kommt automatisch aus Email beim Klick
+    # Email wird beim Versenden automatisch in den Link eingefügt
+    tracking_params = {
+        # Leer - Email wird beim Versenden hinzugefügt, Name wird aus Email extrahiert
+    }
+
     html = generate_complete_phishing_email(
         target_name=params["name"],
         target_role=params.get("role", "Student"),
@@ -468,6 +485,9 @@ def action_generate() -> None:
         signature=signature,
         manual_body=params.get("manual_body"),
         manual_subject=params.get("topic"),
+        tracking_url=TRACKING_URL,
+        tracking_params=tracking_params,
+        tracking_display_text=TRACKING_DISPLAY_TEXT,
     )
 
     if html:
@@ -476,37 +496,25 @@ def action_generate() -> None:
         # NEUE FUNKTION: Direkt Versand anbieten
         send_now = ask("\n📮 Email jetzt versenden? (y/n)", "n").lower().startswith("y")
         if send_now:
-            # Finde die generierte HTML-Datei
-            # Verwende GENAU die gleiche Logik wie generate_complete_phishing_email
+            # Finde die generierte HTML-Datei - suche nach der neuesten Datei mit passendem Pattern
             safe_template = template_normalized.replace(" ", "_").replace("/", "_")
-            safe_name = params['name'].replace(' ', '_')
-            # GENAU wie in generate_complete_phishing_email (Zeile 697)
-            filename = f"phishing_{safe_name}_{params['scenario']}_{safe_template}.html"
-            html_path = ROOT / "generated_emails" / filename
+            pattern = f"phishing_{params['scenario']}_{safe_template}_*.html"
+            generated_dir = ROOT / "generated_emails"
             
-            # Prüfe ob Datei existiert - wenn nicht, suche nach ähnlichen Dateien
-            if not html_path.exists():
-                print(f"\n❌ HTML-Datei nicht gefunden: {html_path}")
-                # Suche nach ähnlichen Dateien im Ordner
-                generated_dir = ROOT / "generated_emails"
-                if generated_dir.exists():
-                    matching_files = list(generated_dir.glob(f"phishing_{safe_name}_*.html"))
-                    if matching_files:
-                        print(f"   💡 Gefundene ähnliche Dateien:")
-                        for f in matching_files[-5:]:  # Zeige die letzten 5
-                            print(f"      - {f.name}")
-                        # Verwende die neueste Datei
-                        latest_file = max(matching_files, key=lambda p: p.stat().st_mtime)
-                        print(f"\n   ✅ Verwende neueste Datei: {latest_file.name}")
-                        html_path = latest_file
-                    else:
-                        print("   💡 Stelle sicher, dass die E-Mail erfolgreich generiert wurde.")
-                        input("\nWeiter mit Enter…")
-                        return
-                else:
-                    print("   💡 Ordner 'generated_emails' existiert nicht.")
-                    input("\nWeiter mit Enter…")
-                    return
+            # Finde alle passenden Dateien und nimm die neueste
+            matching_files = list(generated_dir.glob(pattern))
+            if matching_files:
+                # Sortiere nach Änderungsdatum (neueste zuerst)
+                html_path = max(matching_files, key=lambda p: p.stat().st_mtime)
+                print(f"   📄 Verwende: {html_path.name}")
+            else:
+                print(f"\n❌ HTML-Datei nicht gefunden mit Pattern: {pattern}")
+                html_path = None
+            
+            if not html_path or not html_path.exists():
+                print("   💡 HTML-Datei nicht gefunden. Stelle sicher, dass die E-Mail erfolgreich generiert wurde.")
+                input("\nWeiter mit Enter…")
+                return
             
             # Sammle Versand-Informationen
             print("\n" + "=" * 50)
@@ -514,7 +522,26 @@ def action_generate() -> None:
             print("=" * 50)
             
             recipient_email = ask("Empfänger-Email (komma-separiert für mehrere, z.B. email1@test.de, email2@test.de)", "test@example.com")
+            recipients = [r.strip() for r in recipient_email.split(",") if r.strip()]
+            if not recipients:
+                print("❌ Keine Empfänger angegeben.")
+                return
             subject = ask("Betreff", params.get("topic", "Wichtige Mitteilung"))
+
+            # Tracking-Link pro Empfänger individualisieren (sichtbarer Link bleibt gleich)
+            import re
+            base_html_content = html_path.read_text(encoding='utf-8')
+
+            def personalize_html(html_content: str, recipient: str) -> str:
+                def replace_email(match):
+                    url = match.group(1)
+                    if "email=" in url:
+                        url_updated = re.sub(r"email=[^&\"']*", f"email={recipient}", url)
+                    else:
+                        separator = "&" if "?" in url else "?"
+                        url_updated = f"{url}{separator}email={recipient}"
+                    return f'href="{url_updated}"'
+                return re.sub(r'href="([^"]*track[^"]*)"', replace_email, html_content)
             sender_name = params.get("sender_name", "Prof. Dr. Anne Lauscher")
             # Formatiere Name für IONOS-Anzeige: "Lauscher, Prof. Dr. Anne" statt "Prof. Dr. Anne Lauscher"
             # Extrahiere Nachname und Vorname
@@ -546,20 +573,24 @@ def action_generate() -> None:
             
             try:
                 if dry_run:
-                    print("\n📦 Erstelle .eml Datei...")
-                    subprocess.run(
-                        [
-                            sys.executable,
-                            str(ROOT / "send_email.py"),
-                            "--to", recipient_email,
-                            "--subject", subject,
-                            "--html", str(html_path),
-                            "--from_", sender_full,
-                            "--dry-run"
-                        ],
-                        check=True
-                    )
-                    print("✅ .eml Datei erstellt in: phishing_project/outbox/")
+                    print("\n📦 Erstelle .eml Datei(en)...")
+                    for i, rec in enumerate(recipients, start=1):
+                        per_html = personalize_html(base_html_content, rec)
+                        per_path = html_path.with_name(f"{html_path.stem}_{i}.html")
+                        per_path.write_text(per_html, encoding="utf-8")
+                        subprocess.run(
+                            [
+                                sys.executable,
+                                str(ROOT / "send_email.py"),
+                                "--to", rec,
+                                "--subject", subject,
+                                "--html", str(per_path),
+                                "--from_", sender_full,
+                                "--dry-run"
+                            ],
+                            check=True
+                        )
+                    print("✅ .eml Datei(en) erstellt in: phishing_project/outbox/")
                 else:
                     # IONOS SMTP-Daten als Standard vorschlagen
                     smtp_host = ask("SMTP Host", "smtp.ionos.de")
@@ -568,20 +599,24 @@ def action_generate() -> None:
                     # Für localhost keine Auth nötig
                     if smtp_host in ["localhost", "127.0.0.1", "::1"]:
                         print("\n📨 Sende via lokalen SMTP-Server...")
-                        subprocess.run(
-                            [
-                                sys.executable,
-                                str(ROOT / "send_email.py"),
-                                "--to", recipient_email,
-                                "--subject", subject,
-                                "--html", str(html_path),
-                                "--from_", sender_full,
-                                "--smtp", smtp_host,
-                                "--port", smtp_port,
-                                "--no-tls"
-                            ],
-                            check=True
-                        )
+                        for i, rec in enumerate(recipients, start=1):
+                            per_html = personalize_html(base_html_content, rec)
+                            per_path = html_path.with_name(f"{html_path.stem}_{i}.html")
+                            per_path.write_text(per_html, encoding="utf-8")
+                            subprocess.run(
+                                [
+                                    sys.executable,
+                                    str(ROOT / "send_email.py"),
+                                    "--to", rec,
+                                    "--subject", subject,
+                                    "--html", str(per_path),
+                                    "--from_", sender_full,
+                                    "--smtp", smtp_host,
+                                    "--port", smtp_port,
+                                    "--no-tls"
+                                ],
+                                check=True
+                            )
                     else:
                         # Für externe SMTP Auth benötigt
                         # IONOS Username = E-Mail-Adresse
@@ -589,21 +624,25 @@ def action_generate() -> None:
                         username = ask("SMTP Username", default_username)
                         password = ask("SMTP Password/App-Password")
                         print("\n📨 Sende via SMTP...")
-                        subprocess.run(
-                            [
-                                sys.executable,
-                                str(ROOT / "send_email.py"),
-                                "--to", recipient_email,
-                                "--subject", subject,
-                                "--html", str(html_path),
-                                "--from_", sender_full,
-                                "--smtp", smtp_host,
-                                "--port", smtp_port,
-                                "--username", username,
-                                "--password", password
-                            ],
-                            check=True
-                        )
+                        for i, rec in enumerate(recipients, start=1):
+                            per_html = personalize_html(base_html_content, rec)
+                            per_path = html_path.with_name(f"{html_path.stem}_{i}.html")
+                            per_path.write_text(per_html, encoding="utf-8")
+                            subprocess.run(
+                                [
+                                    sys.executable,
+                                    str(ROOT / "send_email.py"),
+                                    "--to", rec,
+                                    "--subject", subject,
+                                    "--html", str(per_path),
+                                    "--from_", sender_full,
+                                    "--smtp", smtp_host,
+                                    "--port", smtp_port,
+                                    "--username", username,
+                                    "--password", password
+                                ],
+                                check=True
+                            )
                     print("✅ Email erfolgreich versendet!")
             except subprocess.CalledProcessError as e:
                 print(f"\n❌ Fehler beim Versenden (Exit-Code {e.returncode})")

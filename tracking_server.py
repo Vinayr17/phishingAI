@@ -326,7 +326,7 @@ def dashboard() -> str:
     else:
         html += """
             <tr>
-                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                <td colspan="11" style="text-align: center; padding: 40px; color: #999;">
                     Noch keine Daten vorhanden. Klicke auf einen Tracking-Link, um Daten zu sammeln.
                 </td>
             </tr>"""
@@ -367,6 +367,10 @@ def export_csv() -> Response:
                 f'"{esc(r[4])}"',
                 f'"{esc(r[5])}"',
                 f'"{esc(r[6])}"',
+                f'"{esc(r[7])}"',
+                f'"{esc(r[8])}"',
+                f'"{esc(r[9])}"',
+                f'"{esc(r[10])}"',
             ]
         )
         lines.append(line)

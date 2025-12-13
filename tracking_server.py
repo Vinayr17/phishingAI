@@ -184,6 +184,12 @@ def track() -> Response:
     name = request.args.get("name") or None
     email = request.args.get("email") or None
     
+    # Debug: Zeige alle ankommenden Parameter
+    print(f"\n[DEBUG] Ankommende URL-Parameter:")
+    print(f"  request.args: {dict(request.args)}")
+    print(f"  name (raw): {request.args.get('name')}")
+    print(f"  email (raw): {request.args.get('email')}")
+    
     # Leere Strings zu None konvertieren
     if name == "":
         name = None

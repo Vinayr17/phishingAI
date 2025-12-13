@@ -9,10 +9,9 @@ Beispiele:
 TRACKING_DISPLAY_TEXT: Der sichtbare Text des Links in der Email.
 """
 
-# Tracking-Link (aktuell Bitly-Shortlink, leitet auf Render-Track-Endpoint weiter)
-# Wenn du den Shortlink ändern willst, passe nur diese Zeile an.
-TRACKING_URL = "https://bit.ly/4rWbnuc"
-# TRACKING_URL = "https://phishingai.onrender.com/track"  # Online auf Render
+# Tracking-Link (direkt auf Render, leitet dann zu Cloudflare Pages weiter)
+TRACKING_URL = "https://phishingai.onrender.com/track"
+# TRACKING_URL = "https://bit.ly/4rWbnuc"  # Bitly-Shortlink (auskommentiert, da Parameter-Probleme)
 # TRACKING_URL = "http://172.21.89.58:5000/track"         # Lokale IP für Tests (auskommentiert)
 # TRACKING_URL = "http://localhost:5000/track"            # Nur für PC-Tests (auskommentiert)
 

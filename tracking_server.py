@@ -269,82 +269,264 @@ def dashboard() -> str:
     rows = cur.fetchall()
     conn.close()
 
-    # HTML-Tabelle erstellen
+    # Statistiken berechnen
+    browsers = {}
+    os_list = {}
+    devices = {}
+    countries = {}
+    for r in rows:
+        browser = r[3] or 'Unknown'
+        os = r[4] or 'Unknown'
+        device = r[5] or 'Unknown'
+        country = r[8] or 'Unknown'
+        browsers[browser] = browsers.get(browser, 0) + 1
+        os_list[os] = os_list.get(os, 0) + 1
+        devices[device] = devices.get(device, 0) + 1
+        countries[country] = countries.get(country, 0) + 1
+    
+    # Browser-Icons Mapping
+    browser_icons = {
+        'Google Chrome': '🌐',
+        'Mozilla Firefox': '🦊',
+        'Safari': '🧭',
+        'Edge': '🔷',
+        'Opera': '🎭',
+        'Brave Private VPN Webbrowser': '🛡️',
+        'Samsung Internet': '📱',
+        'DuckDuckGo': '🦆',
+        'Studo App': '📚',
+    }
+    
+    # OS-Icons Mapping
+    os_icons = {
+        'Windows': '🪟',
+        'macOS': '🍎',
+        'Linux': '🐧',
+        'Android': '🤖',
+        'iOS': '📱',
+    }
+    
+    # Device-Icons Mapping
+    device_icons = {
+        'Desktop': '💻',
+        'Mobile': '📱',
+        'Tablet': '📲',
+    }
+    
+    # HTML-Tabelle erstellen (Dark Mode + Tech Style)
     html = """<!DOCTYPE html>
 <html>
 <head>
     <title>Tracking Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        h1 { color: #333; }
-        table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        th { background: #4CAF50; color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #ddd; }
-        tr:hover { background: #f9f9f9; }
-        .stats { background: white; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .stat-item { display: inline-block; margin-right: 30px; }
-        .stat-number { font-size: 24px; font-weight: bold; color: #4CAF50; }
-        .stat-label { color: #666; font-size: 14px; }
-        a { color: #4CAF50; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { 
+            color: #00d4ff;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            font-weight: 600;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+            border-color: rgba(0, 212, 255, 0.4);
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #00d4ff;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .export-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #0a0a0a;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 212, 255, 0.3);
+        }
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 212, 255, 0.5);
+        }
+        .table-wrapper {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #0a0a0a;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            color: #e0e0e0;
+        }
+        tr:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transition: background 0.2s;
+        }
+        .icon {
+            font-size: 18px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
     </style>
 </head>
 <body>
-    <h1>📊 Tracking Dashboard</h1>
-    <div class="stats">
-        <div class="stat-item">
-            <div class="stat-number">""" + str(len(rows)) + """</div>
-            <div class="stat-label">Gesamt Klicks</div>
+    <div class="container">
+        <h1>⚡ Tracking Dashboard</h1>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">""" + str(len(rows)) + """</div>
+                <div class="stat-label">Gesamt Klicks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">""" + str(len(browsers)) + """</div>
+                <div class="stat-label">Browser Typen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">""" + str(len(os_list)) + """</div>
+                <div class="stat-label">Betriebssysteme</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">""" + str(len(countries)) + """</div>
+                <div class="stat-label">Länder</div>
+            </div>
+            <div class="stat-card" style="display: flex; align-items: center; justify-content: center;">
+                <a href="/export.csv" class="export-btn">📥 CSV Export</a>
+            </div>
         </div>
-        <div class="stat-item">
-            <a href="/export.csv">📥 CSV Export</a>
-        </div>
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Browser</th>
-                <th>OS</th>
-                <th>Gerät</th>
-                <th>Zeitstempel</th>
-                <th>IP</th>
-                <th>Land</th>
-                <th>Region</th>
-                <th>Stadt</th>
-            </tr>
-        </thead>
-        <tbody>"""
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Browser</th>
+                        <th>OS</th>
+                        <th>Gerät</th>
+                        <th>Zeitstempel</th>
+                        <th>IP</th>
+                        <th>Land</th>
+                        <th>Region</th>
+                        <th>Stadt</th>
+                    </tr>
+                </thead>
+                <tbody>"""
 
     if rows:
         for r in rows:
+            browser = r[3] or 'Unknown'
+            os = r[4] or 'Unknown'
+            device = r[5] or 'Unknown'
+            browser_icon = browser_icons.get(browser, '🌐')
+            os_icon = os_icons.get(os, '💻')
+            device_icon = device_icons.get(device, '📱')
             html += f"""
             <tr>
-                <td>{r[0]}</td>
-                <td>{r[1] or '-'}</td>
-                <td>{r[2] or '-'}</td>
-                <td>{r[3] or '-'}</td>
-                <td>{r[4] or '-'}</td>
-                <td>{r[5] or '-'}</td>
-                <td>{r[6] or '-'}</td>
-                <td>{r[7] or '-'}</td>
-                <td>{r[8] or '-'}</td>
-                <td>{r[9] or '-'}</td>
-                <td>{r[10] or '-'}</td>
+                <td><span class="badge">#{r[0]}</span></td>
+                <td>{r[1] or '<span style="color: #666;">-</span>'}</td>
+                <td>{r[2] or '<span style="color: #666;">-</span>'}</td>
+                <td><span class="icon">{browser_icon}</span>{browser}</td>
+                <td><span class="icon">{os_icon}</span>{os}</td>
+                <td><span class="icon">{device_icon}</span>{device}</td>
+                <td style="font-family: 'Courier New', monospace; color: #00d4ff;">{r[6] or '-'}</td>
+                <td style="font-family: 'Courier New', monospace; color: #a0a0a0;">{r[7] or '<span style="color: #666;">-</span>'}</td>
+                <td>{r[8] or '<span style="color: #666;">-</span>'}</td>
+                <td>{r[9] or '<span style="color: #666;">-</span>'}</td>
+                <td>{r[10] or '<span style="color: #666;">-</span>'}</td>
             </tr>"""
     else:
         html += """
             <tr>
-                <td colspan="11" style="text-align: center; padding: 40px; color: #999;">
-                    Noch keine Daten vorhanden. Klicke auf einen Tracking-Link, um Daten zu sammeln.
+                <td colspan="11" class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: #a0a0a0;">Noch keine Daten vorhanden</div>
+                    <div style="color: #666;">Klicke auf einen Tracking-Link, um Daten zu sammeln.</div>
                 </td>
             </tr>"""
 
     html += """
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>"""
 

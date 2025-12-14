@@ -140,10 +140,17 @@ def lookup_geo(ip: str) -> Tuple[Optional[str], Optional[str], Optional[str], Op
         data = resp.json()
         if data.get("status") != "success":
             return None, None, None, None, None, None, None, None
-        # Koordinaten formatieren (z.B. "52.5200, 13.4050")
+        # Koordinaten formatieren (z.B. "52.5200,13.4050")
         lat = data.get("lat")
         lon = data.get("lon")
-        coordinates = f"{lat},{lon}" if lat and lon else None
+        # Prüfe, ob lat und lon Zahlen sind (können None sein)
+        if lat is not None and lon is not None:
+            try:
+                coordinates = f"{lat},{lon}"
+            except (TypeError, ValueError):
+                coordinates = None
+        else:
+            coordinates = None
         return (
             data.get("country"),
             data.get("regionName"),
@@ -243,36 +250,102 @@ def track() -> Response:
     print(f"  Zeit: {timestamp}")
     print(f"  User-Agent: {ua[:100]}...")  # Erste 100 Zeichen
 
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp, coordinates, zip, timezone, asn)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            name,
-            email,
-            browser,
-            os,
-            device,
-            timestamp,
-            None,
-            None,
-            None,
-            ip,
-            country,
-            region,
-            city,
-            isp,
-            coordinates,
-            zip_code,
-            timezone,
-            asn,
-        ),  # Unnötige Felder = None
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp, coordinates, zip, timezone, asn)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                email,
+                browser,
+                os,
+                device,
+                timestamp,
+                None,
+                None,
+                None,
+                ip,
+                country,
+                region,
+                city,
+                isp,
+                coordinates,
+                zip_code,
+                timezone,
+                asn,
+            ),  # Unnötige Felder = None
+        )
+        conn.commit()
+        conn.close()
+    except sqlite3.OperationalError as e:
+        # Falls Spalten fehlen, versuche Migration und dann Fallback
+        print(f"  ⚠️ Datenbank-Fehler: {e}")
+        print(f"  🔄 Versuche Migration...")
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("PRAGMA table_info(clicks)")
+            existing_cols = {row[1] for row in cur.fetchall()}
+            for col in ["ip", "country", "region", "city", "isp", "coordinates", "zip", "timezone", "asn"]:
+                if col not in existing_cols:
+                    cur.execute(f"ALTER TABLE clicks ADD COLUMN {col} TEXT")
+            conn.commit()
+            conn.close()
+            print(f"  ✅ Migration erfolgreich, versuche erneut...")
+            # Erneut versuchen
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp, coordinates, zip, timezone, asn)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    name,
+                    email,
+                    browser,
+                    os,
+                    device,
+                    timestamp,
+                    None,
+                    None,
+                    None,
+                    ip,
+                    country,
+                    region,
+                    city,
+                    isp,
+                    coordinates,
+                    zip_code,
+                    timezone,
+                    asn,
+                ),
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e2:
+            print(f"  ❌ Migration fehlgeschlagen: {e2}")
+            # Fallback: Nur alte Spalten verwenden (ohne neue Geo-Daten)
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (name, email, browser, os, device, timestamp, None, None, None, ip, country, region, city),
+            )
+            conn.commit()
+            conn.close()
+            print(f"  ⚠️ Fallback: Nur alte Spalten verwendet")
+    except Exception as e:
+        print(f"  ❌ Unerwarteter Fehler beim Speichern: {e}")
+        import traceback
+        traceback.print_exc()
 
     # Redirect auf Decoy-URL, falls konfiguriert (versteckt Render-URL in Millisekunden)
     if REDIRECT_URL and REDIRECT_URL.strip():

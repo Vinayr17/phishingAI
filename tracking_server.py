@@ -42,7 +42,7 @@ def init_db() -> None:
     # Neue Spalten hinzufügen, falls sie fehlen (Migration)
     cur.execute("PRAGMA table_info(clicks)")
     existing_cols = {row[1] for row in cur.fetchall()}
-            for col in ["ip", "country", "region", "city", "isp"]:
+    for col in ["ip", "country", "region", "city", "isp"]:
         if col not in existing_cols:
             cur.execute(f"ALTER TABLE clicks ADD COLUMN {col} TEXT")
     conn.commit()
@@ -658,3 +658,4 @@ if __name__ == "__main__":
     # Debug nur lokal, nicht in Production
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(host="0.0.0.0", port=port, debug=debug)
+

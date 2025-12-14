@@ -658,4 +658,3 @@ if __name__ == "__main__":
     # Debug nur lokal, nicht in Production
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(host="0.0.0.0", port=port, debug=debug)
-

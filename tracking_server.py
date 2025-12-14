@@ -127,42 +127,22 @@ def get_client_ip() -> Optional[str]:
     return request.remote_addr
 
 
-def lookup_geo(ip: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
-    """Fragt eine Geo-IP API ab (Land, Region, Stadt, ISP, Koordinaten, PLZ, Timezone, ASN). Fehlertolerant."""
+def lookup_geo(ip: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    """Fragt eine Geo-IP API ab (Land, Region, Stadt, ISP). Fehlertolerant."""
     if not ip:
-        return None, None, None, None, None, None, None, None
+        return None, None, None, None
     try:
         resp = requests.get(
             f"http://ip-api.com/json/{ip}",
-            params={"fields": "status,country,regionName,city,isp,lat,lon,zip,timezone,as"},
+            params={"fields": "status,country,regionName,city,isp"},
             timeout=2.5,
         )
         data = resp.json()
         if data.get("status") != "success":
-            return None, None, None, None, None, None, None, None
-        # Koordinaten formatieren (z.B. "52.5200,13.4050")
-        lat = data.get("lat")
-        lon = data.get("lon")
-        # Prüfe, ob lat und lon Zahlen sind (können None sein)
-        if lat is not None and lon is not None:
-            try:
-                coordinates = f"{lat},{lon}"
-            except (TypeError, ValueError):
-                coordinates = None
-        else:
-            coordinates = None
-        return (
-            data.get("country"),
-            data.get("regionName"),
-            data.get("city"),
-            data.get("isp"),
-            coordinates,
-            data.get("zip"),
-            data.get("timezone"),
-            data.get("as"),
-        )
+            return None, None, None, None
+        return data.get("country"), data.get("regionName"), data.get("city"), data.get("isp")
     except Exception:
-        return None, None, None, None, None, None, None, None
+        return None, None, None, None
 
 
 @app.route("/health")
@@ -228,7 +208,7 @@ def track() -> Response:
     browser, os, device = parse_user_agent(ua)
     # IP und Geo-Info ermitteln (inkl. ISP)
     ip = get_client_ip()
-    country, region, city, isp, coordinates, zip_code, timezone, asn = lookup_geo(ip or "")
+    country, region, city, isp = lookup_geo(ip or "")
     # Lokale Zeit (Deutschland) statt UTC verwenden
     berlin_tz = timezone('Europe/Berlin')
     timestamp = datetime.now(berlin_tz).strftime("%Y-%m-%d %H:%M:%S")
@@ -243,10 +223,6 @@ def track() -> Response:
     print(f"  IP: {ip}")
     print(f"  Geo: {country}, {region}, {city}")
     print(f"  ISP: {isp}")
-    print(f"  Koordinaten: {coordinates}")
-    print(f"  PLZ: {zip_code}")
-    print(f"  Timezone: {timezone}")
-    print(f"  ASN: {asn}")
     print(f"  Zeit: {timestamp}")
     print(f"  User-Agent: {ua[:100]}...")  # Erste 100 Zeichen
 
@@ -255,8 +231,8 @@ def track() -> Response:
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp, coordinates, zip, timezone, asn)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -290,7 +266,7 @@ def track() -> Response:
             cur = conn.cursor()
             cur.execute("PRAGMA table_info(clicks)")
             existing_cols = {row[1] for row in cur.fetchall()}
-            for col in ["ip", "country", "region", "city", "isp", "coordinates", "zip", "timezone", "asn"]:
+            for col in ["ip", "country", "region", "city", "isp"]:
                 if col not in existing_cols:
                     cur.execute(f"ALTER TABLE clicks ADD COLUMN {col} TEXT")
             conn.commit()
@@ -301,8 +277,8 @@ def track() -> Response:
             cur = conn.cursor()
             cur.execute(
                 """
-                INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp, coordinates, zip, timezone, asn)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clicks (name, email, browser, os, device, timestamp, link_type, scenario, template, ip, country, region, city, isp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     name,
@@ -319,10 +295,6 @@ def track() -> Response:
                     region,
                     city,
                     isp,
-                    coordinates,
-                    zip_code,
-                    timezone,
-                    asn,
                 ),
             )
             conn.commit()
@@ -366,7 +338,7 @@ def dashboard() -> str:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, name, email, browser, os, device, timestamp, ip, country, region, city, isp, coordinates, zip, timezone, asn FROM clicks ORDER BY id DESC"
+        "SELECT id, name, email, browser, os, device, timestamp, ip, country, region, city, isp FROM clicks ORDER BY id DESC"
     )
     rows = cur.fetchall()
     conn.close()
@@ -589,10 +561,6 @@ def dashboard() -> str:
                         <th>Region</th>
                         <th>Stadt</th>
                         <th>ISP</th>
-                        <th>Koordinaten</th>
-                        <th>PLZ</th>
-                        <th>Timezone</th>
-                        <th>ASN</th>
                     </tr>
                 </thead>
                 <tbody>"""
@@ -619,15 +587,11 @@ def dashboard() -> str:
                 <td>{r[9] or '<span style="color: #666;">-</span>'}</td>
                 <td>{r[10] or '<span style="color: #666;">-</span>'}</td>
                 <td>{r[11] or '<span style="color: #666;">-</span>'}</td>
-                <td style="font-family: 'Courier New', monospace; color: #a0a0a0; font-size: 12px;">{r[12] or '<span style="color: #666;">-</span>'}</td>
-                <td>{r[13] or '<span style="color: #666;">-</span>'}</td>
-                <td style="font-family: 'Courier New', monospace; color: #a0a0a0; font-size: 12px;">{r[14] or '<span style="color: #666;">-</span>'}</td>
-                <td style="font-family: 'Courier New', monospace; color: #a0a0a0; font-size: 12px;">{r[15] or '<span style="color: #666;">-</span>'}</td>
             </tr>"""
     else:
         html += """
             <tr>
-                <td colspan="16" class="empty-state">
+                <td colspan="12" class="empty-state">
                     <div class="empty-state-icon">📊</div>
                     <div style="font-size: 18px; margin-bottom: 10px; color: #a0a0a0;">Noch keine Daten vorhanden</div>
                     <div style="color: #666;">Klicke auf einen Tracking-Link, um Daten zu sammeln.</div>
@@ -651,12 +615,12 @@ def export_csv() -> Response:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, name, email, browser, os, device, timestamp, ip, country, region, city, isp, coordinates, zip, timezone, asn FROM clicks ORDER BY id ASC"
+        "SELECT id, name, email, browser, os, device, timestamp, ip, country, region, city, isp FROM clicks ORDER BY id ASC"
     )
     rows = cur.fetchall()
     conn.close()
 
-    header = "id,name,email,browser,os,device,timestamp,ip,country,region,city,isp,coordinates,zip,timezone,asn"
+    header = "id,name,email,browser,os,device,timestamp,ip,country,region,city,isp"
     lines = [header]
     def esc(val: str) -> str:
         # Doppelte Anführungszeichen im CSV verdoppeln
@@ -677,10 +641,6 @@ def export_csv() -> Response:
                 f'"{esc(r[9])}"',
                 f'"{esc(r[10])}"',
                 f'"{esc(r[11])}"',
-                f'"{esc(r[12])}"',
-                f'"{esc(r[13])}"',
-                f'"{esc(r[14])}"',
-                f'"{esc(r[15])}"',
             ]
         )
         lines.append(line)

@@ -42,7 +42,7 @@ def init_db() -> None:
     # Neue Spalten hinzufügen, falls sie fehlen (Migration)
     cur.execute("PRAGMA table_info(clicks)")
     existing_cols = {row[1] for row in cur.fetchall()}
-    for col in ["ip", "country", "region", "city", "isp", "coordinates", "zip", "timezone", "asn"]:
+            for col in ["ip", "country", "region", "city", "isp"]:
         if col not in existing_cols:
             cur.execute(f"ALTER TABLE clicks ADD COLUMN {col} TEXT")
     conn.commit()
@@ -249,10 +249,6 @@ def track() -> Response:
                 region,
                 city,
                 isp,
-                coordinates,
-                zip_code,
-                timezone,
-                asn,
             ),  # Unnötige Felder = None
         )
         conn.commit()

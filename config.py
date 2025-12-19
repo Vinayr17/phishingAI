@@ -16,7 +16,7 @@ TRACKING_URL = "https://phishingai.onrender.com/track"
 # TRACKING_URL = "http://localhost:5000/track"            # Nur für PC-Tests (auskommentiert)
 
 # Sichtbarer Text in der Email für den Tracking-Link.
-TRACKING_DISPLAY_TEXT = "moodle.uni-hamburg.de/dokument"
+TRACKING_DISPLAY_TEXT = "lecture2go.uni-hamburg.de/materials/genai-business"
 
 # Redirect-URL nach dem Tracking (optional)
 # Wenn gesetzt, wird der Nutzer nach dem Track sofort hierhin weitergeleitet.

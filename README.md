@@ -6,7 +6,7 @@
 
 ---
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/UHH_Universit%C3%A4t_Hamburg_Logo_mit_Schrift_2010_Farbe_CMYK.svg/500px-UHH_Universit%C3%A4t_Hamburg_Logo_mit_Schrift_2010_Farbe_CMYK.svg.png" width="300" alt="Universität Hamburg Logo"/>
+<img src="https://www.kus.uni-hamburg.de/5379870/up-uhh-logo-u-2010-u-farbe-u-rgb-001e11ec384942b0d6e4cf4f38b0482cea68099c.jpg" width="300" alt="Universität Hamburg Logo"/>
 
 **Developed at Universität Hamburg**  
 *Risk and Rewards of Generative AI in Business*  

@@ -6,7 +6,7 @@
 
 ---
 
-<img src="https://www.uni-hamburg.de/assets/uhh-logo-e94c653aee5283b9b28e30c4b0db41b68178d6e67babef3102ac8f3a30a91b67.svg" width="200" alt="Universität Hamburg Logo"/>
+<img src="uhh_logo.png" width="200" alt="Universität Hamburg Logo"/>
 
 **Developed at Universität Hamburg**  
 *Risk and Rewards of Generative AI in Business*  

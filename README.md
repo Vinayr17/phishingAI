@@ -1,12 +1,18 @@
-# 🎣 Phishing Simulation System
-
-> An AI-powered phishing simulation platform demonstrating the accessibility and effectiveness of modern social engineering attacks in educational contexts.
-
 <div align="center">
 
-**Developed at University of Hamburg**  
+# 🎣 Phishing Simulation System
+
+### An AI-powered phishing simulation platform demonstrating the accessibility and effectiveness of modern social engineering attacks in educational contexts
+
+---
+
+<img src="https://www.uni-hamburg.de/assets/uhh-logo-e94c653aee5283b9b28e30c4b0db41b68178d6e67babef3102ac8f3a30a91b67.svg" width="200" alt="Universität Hamburg Logo"/>
+
+**Developed at Universität Hamburg**  
 *Risk and Rewards of Generative AI in Business*  
 *Winter Semester 2024/2025*
+
+---
 
 </div>
 
@@ -292,7 +298,7 @@ Use this knowledge to improve security awareness, not to harm others.
 
 ---
 
-*For questions about research methodology or ethical considerations, contact:  https://vinaydiwan.netlify.app
+*For questions about research methodology or ethical considerations, contact:*  
 *University of Hamburg, Faculty of Business Administration*
 
 **🔒 Remember: Always obtain proper authorization before conducting security research.**

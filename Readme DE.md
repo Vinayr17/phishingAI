@@ -1,12 +1,18 @@
+<div align="center">
+
 # 🎣 Phishing Simulation System
 
-> Eine KI-gestützte Phishing-Simulationsplattform, die die Zugänglichkeit und Wirksamkeit moderner Social-Engineering-Angriffe in Bildungskontexten demonstriert.
+### Eine KI-gestützte Phishing-Simulationsplattform, die die Zugänglichkeit und Wirksamkeit moderner Social-Engineering-Angriffe in Bildungskontexten demonstriert
 
-<div align="center">
+---
+
+<img src="https://www.kus.uni-hamburg.de/5379870/up-uhh-logo-u-2010-u-farbe-u-rgb-001e11ec384942b0d6e4cf4f38b0482cea68099c.jpg" width="300" alt="Universität Hamburg Logo"/>
 
 **Entwickelt an der Universität Hamburg**  
 *Risk and Rewards of Generative AI in Business*  
 *Wintersemester 2024/2025*
+
+---
 
 </div>
 
@@ -292,7 +298,7 @@ Nutzen Sie dieses Wissen, um Sicherheitsbewusstsein zu verbessern, nicht um ande
 
 ---
 
-*Für Fragen zur Forschungsmethodik oder ethischen Überlegungen kontaktieren Sie:*  https://vinaydiwan.netlify.app
+*Für Fragen zur Forschungsmethodik oder ethischen Überlegungen kontaktieren Sie: https://vinaydiwan.netlify.app  
 *Universität Hamburg, Fakultät für Betriebswirtschaftslehre*
 
 **🔒 Denken Sie daran: Holen Sie immer die entsprechende Genehmigung ein, bevor Sie Sicherheitsforschung durchführen.**

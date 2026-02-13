@@ -10,7 +10,7 @@
 
 **Entwickelt an der Universität Hamburg**  
 *Risk and Rewards of Generative AI in Business*  
-*Wintersemester 2024/2025*
+*Wintersemester 2025/2026*
 
 ---
 

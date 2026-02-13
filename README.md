@@ -292,7 +292,7 @@ Use this knowledge to improve security awareness, not to harm others.
 
 ---
 
-*For questions about research methodology or ethical considerations, contact:  
+*For questions about research methodology or ethical considerations, contact:  https://vinaydiwan.netlify.app
 *University of Hamburg, Faculty of Business Administration*
 
 **🔒 Remember: Always obtain proper authorization before conducting security research.**

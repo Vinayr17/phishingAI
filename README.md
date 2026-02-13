@@ -6,7 +6,7 @@
 
 ---
 
-<img src="uhh_logo.png" width="200" alt="Universität Hamburg Logo"/>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/UHH_Universit%C3%A4t_Hamburg_Logo_mit_Schrift_2010_Farbe_CMYK.svg/500px-UHH_Universit%C3%A4t_Hamburg_Logo_mit_Schrift_2010_Farbe_CMYK.svg.png" width="300" alt="Universität Hamburg Logo"/>
 
 **Developed at Universität Hamburg**  
 *Risk and Rewards of Generative AI in Business*  
@@ -298,7 +298,7 @@ Use this knowledge to improve security awareness, not to harm others.
 
 ---
 
-*For questions about research methodology or ethical considerations, contact:*  
+*For questions about research methodology or ethical considerations, contact: vinaydiwan.netlify.app  
 *University of Hamburg, Faculty of Business Administration*
 
 **🔒 Remember: Always obtain proper authorization before conducting security research.**
